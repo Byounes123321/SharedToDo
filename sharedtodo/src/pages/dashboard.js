@@ -1,8 +1,11 @@
 import { useState, useEffect } from "react";
 import UserLists from "/Components/UserList.jsx";
+import ListView from "/Components/ListView.jsx";
+
 function Dashboard() {
   const [userName, setUserName] = useState("");
   const [userId, setUserId] = useState("");
+  const [listId, setListId] = useState("");
 
   useEffect(() => {
     fetch("http://localhost:8888/dashboard", {
@@ -27,19 +30,27 @@ function Dashboard() {
         console.log(err);
         // Handle the error or redirect to the login page if needed
       });
-  }, []); // The empty array [] means this effect runs once after the component mounts
+  }, []);
+
+  const newList = () => {
+    setListId("new");
+  };
 
   return (
     <div>
       <header>
-        <h1>{userName}'s Dashboard</h1>
+        {userName ? <h1>Welcome, {userName}</h1> : <h1>Loading...</h1>}
       </header>
-      <aside>
-        <h2>Your Lists</h2>
-        <button>Create New List</button>
-        <br />
-        <UserLists userID={userId} />
-      </aside>
+      <div className="DashboardBody">
+        {" "}
+        <aside>
+          <h2>Your Lists</h2>
+          <button onClick={newList}>Create New List</button>
+          <br />
+          <UserLists userID={userId} />
+        </aside>
+        <ListView userID={userId} listID={listId} />
+      </div>
     </div>
   );
 }

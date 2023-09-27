@@ -6,7 +6,7 @@ export default function UserList(userID) {
   useEffect(() => {
     const fetchData = async () => {
       const response = await fetch(
-        "http://localhost:8888/userLists/?" + userID
+        "http://localhost:8888/getuserLists/?" + userID
       );
       const data = await response.json();
       setUserLists(data);

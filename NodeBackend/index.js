@@ -214,8 +214,8 @@ app.get("/dashboard", (req, res) => {
   });
 });
 
-// Users Lists
-app.get("/userlists/:userID", (req, res) => {
+//Get all users Lists
+app.get("/getuserlists/:userID", (req, res) => {
   const userID = req.params.userID;
   connection.query(
     "SELECT * FROM users_lists WHERE U_ID = ?",
@@ -232,6 +232,58 @@ app.get("/userlists/:userID", (req, res) => {
       }
     }
   );
+});
+
+// new list / update name
+app.put("/putuserlists/:userID/:listID", (req, res) => {
+  const userID = req.params.userID;
+  const listID = req.params.listID;
+  const newListName = req.body.listName;
+  console.log("newListName", newListName);
+  console.log("userID", userID);
+  if (listID === "new") {
+    connection.query(
+      "INSERT INTO lists (Title) VALUES (?)",
+      [newListName],
+      (err, results) => {
+        if (err) {
+          console.log(err);
+          return res.status(500).send("Server Error");
+        } else {
+          const newListID = results.insertId;
+          console.log("newListID", newListID);
+          connection.query(
+            "INSERT INTO users_lists (U_ID, L_ID) VALUES (?, ?)",
+            [userID, newListID],
+            (err, results) => {
+              if (err) {
+                console.log(err);
+                return res.status(500).send("Server Error");
+              } else {
+                return res
+                  .status(200)
+                  .send("List created successfully")
+                  .send(newListID);
+              }
+            }
+          );
+        }
+      }
+    );
+  } else {
+    connection.query(
+      "UPDATE lists SET Title = ? WHERE L_ID = ?",
+      [newListName, listID],
+      (err, results) => {
+        if (err) {
+          console.log(err);
+          return res.status(500).send("Server Error");
+        } else {
+          return res.status(200).send("List updated successfully");
+        }
+      }
+    );
+  }
 });
 
 app.post("/logout", (req, res) => {
