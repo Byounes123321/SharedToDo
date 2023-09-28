@@ -6,6 +6,11 @@ export default function ListView({ userID, listID }) {
   const [tasks, setTasks] = useState([]);
   const taskInputRef = useRef(null);
 
+  //TODO:
+  // 1. Add friends to your list
+  // 2. Add a due date to your list
+  //! make userList component 
+
   // Function to handle onBlur event for the title input field
   const handleTitleBlur = (event) => {
     const inputValue = event.target.value;
@@ -26,7 +31,7 @@ export default function ListView({ userID, listID }) {
         .then((response) => {
           // Handle the response as needed
           console.log("List name updated:", response());
-          // i sent the list id in the response, that needs to be set as the list id for this component
+          //! I sent the list id in the response, that needs to be set as the list id for this component
         })
         .catch((error) => {
           console.error("Error updating list name:", error);
@@ -39,6 +44,7 @@ export default function ListView({ userID, listID }) {
     const inputValue = event.target.value;
     console.log("Task value:", inputValue);
     setTaskName(inputValue);
+    //! make fetch request to add task to the list
   };
 
   // Function to add a new task

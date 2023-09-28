@@ -15,9 +15,11 @@ const redisClient = redis.createClient("127.0.0.1", "6379");
 })();
 /*
   Where im at
-  1. I have a working login and signup
-      The redis session is only being stored in the /logout route, it looks like its not being stored in redis properly, the session id is nill in redis
-      good guide so far https://www.sitepoint.com/using-redis-node-js/ 
+  1. I can create a new list and i think edit an existing list(need to finish get user lists)
+  2. I can add tasks to the list but it does not save in the database
+  3. Need to work on the social aspect of the app( sharing lists, adding friends, etc.)
+  4. Need to work on security and reauthentification after 10 minutes( also need to make sure user is logged in before making any requests)
+  ! REMEMBER TO INSTALL REDIS WITH DOCKER ON LAPTOP
  */
 
 redisClient.on("connect", function (err) {
@@ -225,6 +227,7 @@ app.get("/getuserlists/:userID", (req, res) => {
         console.log(err);
         return res.status(500).send("Server Error");
       } else if (results.length > 0) {
+        //! This is where I need to get the list names from the lists table
         return res.status(200).send(results);
       } else {
         console.log("User not found");
