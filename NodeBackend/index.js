@@ -9,6 +9,10 @@ const session = require("express-session");
 const RedisStore = require("connect-redis").default;
 const redis = require("redis");
 const redisClient = redis.createClient("127.0.0.1", "6379");
+const http = require("http");
+const socketIo = require("socket.io");
+const server = http.createServer(app);
+const { Server } = require("socket.io");
 
 (async () => {
   await redisClient.connect();
@@ -16,10 +20,8 @@ const redisClient = redis.createClient("127.0.0.1", "6379");
 /*
   Where im at
   1. I can create a new list and i think edit an existing list(need to finish get user lists)
-  2. I can add tasks to the list but it does not save in the database
-  3. Need to work on the social aspect of the app( sharing lists, adding friends, etc.)
-  4. Need to work on security and reauthentification after 10 minutes( also need to make sure user is logged in before making any requests)
-  ! REMEMBER TO INSTALL REDIS WITH DOCKER ON LAPTOP
+  2. Need to work on the social aspect of the app( sharing lists, adding friends, etc.)
+  3. Need to work on security and reauthentification after 10 minutes( also need to make sure user is logged in before making any requests)
  */
 
 redisClient.on("connect", function (err) {
@@ -40,7 +42,7 @@ app.use(
       sameSite: true,
       secure: false,
       httpOnly: false,
-      maxAge: 1000 * 60 * 10, // 10 minutes
+      maxAge: 1000 * 60 * 60, // 60 minutes (1 hour)
     },
   })
 );
@@ -49,6 +51,12 @@ app.use(cors({ origin: "http://localhost:3000", credentials: true }));
 
 // Middleware
 http: app.use(express.json());
+
+// Listen for incoming WebSocket connections
+const io = new Server(server, { cors: { origin: "*" } });
+io.on("connection", (socket) => {
+  console.log("A user connected");
+});
 
 //import Database connection
 const connection = require("./Components/DbConnect.js");
@@ -220,15 +228,19 @@ app.get("/dashboard", (req, res) => {
 app.get("/getuserlists/:userID", (req, res) => {
   const userID = req.params.userID;
   connection.query(
-    "SELECT * FROM users_lists WHERE U_ID = ?",
+    "SELECT users_lists.L_ID, lists.Title FROM users_lists INNER JOIN lists ON users_lists.L_ID = lists.L_ID WHERE users_lists.U_ID = ?",
     [userID],
     (err, results) => {
       if (err) {
         console.log(err);
         return res.status(500).send("Server Error");
       } else if (results.length > 0) {
-        //! This is where I need to get the list names from the lists table
-        return res.status(200).send(results);
+        const listData = results.map((row) => ({
+          L_ID: row.L_ID,
+          Title: row.Title,
+        })); // Extract L_ID and Title
+        // console.log(listData); // Log listData
+        return res.status(200).json(listData); // Send listData as JSON
       } else {
         console.log("User not found");
         return res.status(404).send("User not found");
@@ -242,6 +254,7 @@ app.put("/putuserlists/:userID/:listID", (req, res) => {
   const userID = req.params.userID;
   const listID = req.params.listID;
   const newListName = req.body.listName;
+  io.emit("ListUpdate");
   console.log("newListName", newListName);
   console.log("userID", userID);
   if (listID === "new") {
@@ -263,10 +276,7 @@ app.put("/putuserlists/:userID/:listID", (req, res) => {
                 console.log(err);
                 return res.status(500).send("Server Error");
               } else {
-                return res
-                  .status(200)
-                  .send("List created successfully")
-                  .send(newListID);
+                return res.status(200).send({ newID: newListID });
               }
             }
           );
@@ -289,6 +299,86 @@ app.put("/putuserlists/:userID/:listID", (req, res) => {
   }
 });
 
+// new/update task
+app.put("/puttask/:listID/:taskID", (req, res) => {
+  const listID = req.params.listID;
+  const taskID = req.params.taskID;
+  const taskName = req.body.taskName;
+  console.log("task enterd");
+  if (taskID === "new") {
+    connection.query(
+      "INSERT INTO tasks (L_ID, taskName, done) VALUES (?, ?, ?)",
+      [listID, taskName, 0],
+      (err, results) => {
+        if (err) {
+          console.log(err);
+          return res.status(500).send("Server Error");
+        } else {
+          const newTaskID = results.insertId;
+          return res.status(200).send({ newID: newTaskID });
+        }
+      }
+    );
+  } else {
+    connection.query(
+      "UPDATE tasks SET taskName = ? WHERE T_ID = ?",
+      [taskName, taskID],
+      (err, results) => {
+        if (err) {
+          console.log(err);
+          return res.status(500).send("Server Error");
+        } else {
+          return res.status(200).send("Task updated successfully");
+        }
+      }
+    );
+  }
+});
+
+app.get("/getlist/:listID", (req, res) => {
+  const listID = req.params.listID;
+
+  // Replace this query with your database query to fetch the list by ID
+  connection.query(
+    "SELECT Title FROM lists WHERE L_ID = ?",
+    [listID],
+    (err, listResults) => {
+      if (err) {
+        console.log(err);
+        return res.status(500).send("Server Error");
+      } else if (listResults.length === 0) {
+        console.log("List not found");
+        return res.status(404).send("List not found");
+      } else {
+        const listTitle = listResults[0].Title;
+
+        // Replace this query with your database query to fetch tasks for the list by ID
+        connection.query(
+          "SELECT TaskName FROM tasks WHERE L_ID = ?",
+          [listID],
+          (err, taskResults) => {
+            if (err) {
+              console.log(err);
+              return res.status(500).send("Server Error");
+            } else {
+              const taskNames = taskResults.map((task) => task.TaskName);
+
+              // Construct the response object with list details
+              const listDetails = {
+                Title: listTitle,
+                Tasks: taskNames,
+              };
+
+              console.log("List:", listDetails);
+              return res.status(200).json(listDetails);
+            }
+          }
+        );
+      }
+    }
+  );
+});
+
 app.post("/logout", (req, res) => {
   req.session.destroy((err) => {
     if (err) {
@@ -298,6 +388,6 @@ app.post("/logout", (req, res) => {
   });
 });
 
-app.listen(port, () => {
+server.listen(port, () => {
   console.log(`Server is running on http://localhost:${port}`);
 });

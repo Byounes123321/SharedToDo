@@ -36,6 +36,10 @@ function Dashboard() {
     setListId("new");
   };
 
+  const handleListClick = (listID) => {
+    setListId(listID);
+  };
+
   return (
     <div>
       <header>
@@ -47,9 +51,9 @@ function Dashboard() {
           <h2>Your Lists</h2>
           <button onClick={newList}>Create New List</button>
           <br />
-          <UserLists userID={userId} />
+          <UserLists userID={userId} onListClick={handleListClick} />
         </aside>
-        <ListView userID={userId} listID={listId} />
+        <ListView userID={userId} incomingListID={listId} />
       </div>
     </div>
   );

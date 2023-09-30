@@ -1,26 +1,40 @@
 import React, { useState, useEffect, useRef } from "react";
 
-export default function ListView({ userID, listID }) {
+export default function ListView({ userID, incomingListID }) {
   const [listName, setListName] = useState("");
   const [taskName, setTaskName] = useState("");
   const [tasks, setTasks] = useState([]);
+  const [listID, setListID] = useState(incomingListID);
   const taskInputRef = useRef(null);
+  const [taskID, setTaskID] = useState("new");
 
-  //TODO:
-  // 1. Add friends to your list
-  // 2. Add a due date to your list
-  //! make userList component 
+  //! need to be able to update tasks and check them off
+  //! need to add the ability to delete tasks
+  //! need to add the ability to delete lists
+  //! need to add the ability to add friends to lists
+  //! need to add the ability to add friends to the app
 
-  // Function to handle onBlur event for the title input field
+  useEffect(() => {
+    setListID(incomingListID);
+    console.log("List ID updated:", incomingListID);
+    if (incomingListID !== "new") {
+      fetch(`http://localhost:8888/getlist/${incomingListID}`)
+        .then((response) => response.json())
+        .then((data) => {
+          console.log("List:", data);
+          setListName(data.Title);
+          setTasks(data.Tasks);
+        });
+    }
+  }, [incomingListID]);
+
+  // Handle onBlur event for the title input field
   const handleTitleBlur = (event) => {
     const inputValue = event.target.value;
-    console.log("Input value:", inputValue);
-    console.log(userID);
     setListName(inputValue);
 
-    // Make a fetch request when listName updates
-
-    if (listName && listName) {
+    if (listName && listID) {
+      // Make a fetch request when listName updates
       fetch(`http://localhost:8888/putuserlists/${userID}/${listID}`, {
         method: "PUT",
         headers: {
@@ -28,10 +42,12 @@ export default function ListView({ userID, listID }) {
         },
         body: JSON.stringify({ listName }),
       })
-        .then((response) => {
-          // Handle the response as needed
-          console.log("List name updated:", response());
-          //! I sent the list id in the response, that needs to be set as the list id for this component
+        .then((response) => response.json())
+        .then((data) => {
+          console.log("List name updated:", listName);
+          console.log("List name updated:", data);
+          setListID(data.newID);
+          console.log("List ID updated:", data.newID);
         })
         .catch((error) => {
           console.error("Error updating list name:", error);
@@ -39,45 +55,39 @@ export default function ListView({ userID, listID }) {
     }
   };
 
-  // Function to handle onBlur event for the task input field
+  // Handle onBlur event for the task input field
   const handleTaskBlur = (event) => {
     const inputValue = event.target.value;
-    console.log("Task value:", inputValue);
     setTaskName(inputValue);
-    //! make fetch request to add task to the list
   };
 
   // Function to add a new task
   const addTask = () => {
     if (taskName.trim() !== "") {
       setTasks([...tasks, taskName]);
-      setTaskName(""); // Clear the task input field
+
+      // Make a fetch request when add task button is clicked
+
+      if (taskName && listID !== "new") {
+        fetch(`http://localhost:8888/puttask/${listID}/${taskID}`, {
+          method: "PUT",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({ taskName }),
+        })
+          .then((response) => {
+            console.log("Task added:", response);
+          })
+          .catch((error) => {
+            console.error("Error adding task:", error);
+          });
+      }
+
+      setTaskName("");
       taskInputRef.current.focus();
     }
   };
-  // if the listid is new send it with no list id attached to make a new list in the database
-  // add the user id to the api call to make sure the list is added to the correct user
-  // check if name is really changed to avoid unnecessary api calls
-
-  // Make a fetch request when taskName changes
-  useEffect(() => {
-    if (taskName && listID !== "new") {
-      fetch(`http://your-api-endpoint-for-tasks/${listID}`, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({ taskName }),
-      })
-        .then((response) => {
-          // Handle the response as needed
-          console.log("Task added:", response);
-        })
-        .catch((error) => {
-          console.error("Error adding task:", error);
-        });
-    }
-  }, [taskName, listID]);
 
   return (
     <div>
@@ -105,7 +115,7 @@ export default function ListView({ userID, listID }) {
         {tasks.map((task, index) => (
           <li key={index}>
             <input type="checkbox" />
-            {task}
+            <input type="text" value={task} />
           </li>
         ))}
       </ul>
