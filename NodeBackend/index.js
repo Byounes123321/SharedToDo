@@ -304,25 +304,27 @@ app.put("/puttask/:listID/:taskID", (req, res) => {
   const listID = req.params.listID;
   const taskID = req.params.taskID;
   const taskName = req.body.taskName;
-  console.log("task enterd");
+
+  console.log("task entered");
+
   if (taskID === "new") {
     connection.query(
-      "INSERT INTO tasks (L_ID, taskName, done) VALUES (?, ?, ?)",
-      [listID, taskName, 0],
+      "INSERT INTO tasks (L_ID, taskName) VALUES (?, ?)",
+      [listID, taskName],
       (err, results) => {
         if (err) {
           console.log(err);
           return res.status(500).send("Server Error");
         } else {
           const newTaskID = results.insertId;
-          return res.status(200).send({ newID: newTaskID });
+          return res.status(200).json({ newID: newTaskID }); // Send JSON response
         }
       }
     );
   } else {
     connection.query(
       "UPDATE tasks SET taskName = ? WHERE T_ID = ?",
-      [taskName, taskID],
+      [taskName, taskID], // Update the task name and completion status
       (err, results) => {
         if (err) {
           console.log(err);
@@ -354,7 +356,7 @@ app.get("/getlist/:listID", (req, res) => {
 
         // Replace this query with your database query to fetch tasks for the list by ID
         connection.query(
-          "SELECT TaskName FROM tasks WHERE L_ID = ?",
+          "SELECT TaskName, done, T_ID FROM tasks WHERE L_ID = ?",
           [listID],
           (err, taskResults) => {
             if (err) {
@@ -362,11 +364,20 @@ app.get("/getlist/:listID", (req, res) => {
               return res.status(500).send("Server Error");
             } else {
               const taskNames = taskResults.map((task) => task.TaskName);
+              const taskDone = taskResults.map((task) => task.done);
+              const taskID = taskResults.map((task) => task.T_ID);
 
-              // Construct the response object with list details
+              // Create an array of task objects with name and done properties
+              const tasks = taskNames.map((name, index) => ({
+                name,
+                done: taskDone[index], // Add the done property here
+                id: taskID[index],
+              }));
+
+              // Construct the response object with list details including tasks
               const listDetails = {
                 Title: listTitle,
-                Tasks: taskNames,
+                Tasks: tasks, // Include the tasks array here
               };
 
               console.log("List:", listDetails);
@@ -374,6 +385,94 @@ app.get("/getlist/:listID", (req, res) => {
             }
           }
         );
+      }
+    }
+  );
+});
+// Update task
+app.put("/updatetask/:taskID", (req, res) => {
+  const taskID = req.params.taskID;
+  const taskName = req.body.taskName;
+  const completed = req.body.completed; // Add a completed field to the request body
+  console.log("taskName", taskName);
+  if (taskName === undefined) {
+    connection.query(
+      "UPDATE tasks SET done = ? WHERE T_ID = ?", // Update the completion status
+      [completed, taskID],
+      (err, results) => {
+        if (err) {
+          console.log(err);
+          return res.status(500).send("Server Error");
+        } else {
+          return res.status(200).send("Task updated successfully");
+        }
+      }
+    );
+  } else {
+    connection.query(
+      "UPDATE tasks SET taskName = ? WHERE T_ID = ?",
+      [taskName, taskID],
+      (err, results) => {
+        if (err) {
+          console.log(err);
+          return res.status(500).send("Server Error");
+        } else {
+          return res.status(200);
+        }
+      }
+    );
+  }
+});
+
+// Delete list
+app.delete("/deletelist/:listID", async (req, res) => {
+  const listID = req.params.listID;
+  io.emit("ListUpdate");
+  try {
+    // Use Promise.all to perform multiple queries in parallel
+    await Promise.all([
+      query("DELETE FROM lists WHERE L_ID = ?", [listID]),
+      query("DELETE FROM users_lists WHERE L_ID = ?", [listID]),
+      query("DELETE FROM tasks WHERE L_ID = ?", [listID]),
+    ]);
+    console.log("List deleted successfully", listID);
+    return res.status(200);
+  } catch (err) {
+    console.error(err);
+    return res.status(500).send("Server Error");
+  }
+});
+
+// Helper function to execute a MySQL query as a promise
+function query(sql, values) {
+  return new Promise((resolve, reject) => {
+    connection.query(sql, values, (err, results) => {
+      if (err) {
+        reject(err);
+      } else {
+        resolve(results);
+      }
+    });
+  });
+}
+
+// Delete task
+app.delete("/deletetask/:taskID", async (req, res) => {
+  const taskID = req.params.taskID;
+  console.log("deleting task", taskID);
+  if (taskID === undefined) {
+    return res.status(400).send("Task not found");
+  }
+  connection.query(
+    "DELETE FROM tasks WHERE T_ID = ?",
+    [taskID],
+    (err, results) => {
+      if (err) {
+        console.log(err);
+        return res.status(500).send("Server Error");
+      } else {
+        io.emit("TaskDelete");
+        return res.status(200);
       }
     }
   );
