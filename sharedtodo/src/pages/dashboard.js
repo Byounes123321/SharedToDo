@@ -39,11 +39,17 @@ function Dashboard() {
   const handleListClick = (listID) => {
     setListId(listID);
   };
+  const checklogin = () => {
+    console.log("User ID: " + userId);
+    console.log("User Name: " + userName);
+    console.log("List ID: " + listId);
+  };
 
   return (
     <div>
       <header>
         {userName ? <h1>Welcome, {userName}</h1> : <h1>Loading...</h1>}
+        <button onClick={checklogin}>Check login</button>
       </header>
       <div className="DashboardBody">
         {" "}

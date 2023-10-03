@@ -23,12 +23,15 @@ export default function ListView({ userID, incomingListID }) {
     socket.current = socketIOClient("http://localhost:8888");
 
     // Set up the event listener for "TaskDelete" socket event once
-    socket.current.on("TaskDelete", () => {
+    socket.current.on("TaskDelete", (data) => {
       // Use a debounce mechanism to limit the rate of event processing
+      const L_ID = data.L_ID;
+      console.log("sockit", L_ID);
       clearTimeout(debounceDeleteTaskTimeout.current);
       debounceDeleteTaskTimeout.current = setTimeout(() => {
-        deleteTask();
-      }, 500); // Adjust the debounce delay as needed
+        console.log("TaskDelete event received", L_ID, taskID);
+        fetchAndUpdateList(L_ID);
+      }, 100); // Adjust the debounce delay as needed
     });
 
     // Clean up the socket connection when the component unmounts
@@ -219,11 +222,12 @@ export default function ListView({ userID, incomingListID }) {
   };
 
   // Function to fetch and update the list
-  const fetchAndUpdateList = () => {
-    console.log("List ID:", listID);
-    if (listID !== "new") {
-      console.log("Fetching list:", listID);
-      fetch(`http://localhost:8888/getlist/${listID}`)
+  const fetchAndUpdateList = (L_ID) => {
+    console.log("List ID:", L_ID);
+    console.log("Fetching list..." + listID);
+    if (L_ID !== "new") {
+      console.log("Fetching list:", L_ID);
+      fetch(`http://localhost:8888/getlist/${L_ID}`)
         .then((response) => response.json())
         .then((data) => {
           console.log("List:", data);
@@ -237,28 +241,37 @@ export default function ListView({ userID, incomingListID }) {
   };
 
   // Function to delete a task
-  //! okay i dont fucking know why this isn't working, the task is being deleted properly but the task list isn't re rendering like it should with the websocket I DONT FUCKING KNOW
   const deleteTask = async (e) => {
+    console.log("deleteTask called");
     if (!e || !e.target) {
       console.error("Event object is undefined or lacks a target property.");
       return;
     }
+
     const id = e.target.id;
+    console.log("Task deleted:", id);
+
     const confirmDelete = window.confirm(
       "Are you sure you want to delete this task?"
     );
 
-    // Confirm that deleteTask is called
-    console.log("deleteTask called");
-    console.log("listID:", listID);
     if (confirmDelete) {
-      console.log("Task deleted:", id);
+      console.log(confirmDelete);
       const response = await fetch("http://localhost:8888/deletetask/" + id, {
         method: "DELETE",
+        headers: {
+          "Content-Type": "application/json", // Specify the content type as JSON
+        },
+        body: JSON.stringify({ L_ID: listID }), // Convert the object to a JSON string
       });
+
+      if (!response.ok) {
+        throw new Error("Failed to delete task");
+      }
+
+      console.log("huh?");
       const data = await response.json();
       console.log("Task deleted:", data);
-      fetchAndUpdateList();
     }
   };
 

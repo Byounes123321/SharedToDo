@@ -19,9 +19,12 @@ const { Server } = require("socket.io");
 })();
 /*
   Where im at
-  1. I can create a new list and i think edit an existing list(need to finish get user lists)
+  1. I have CRUD on lists and tasks working
   2. Need to work on the social aspect of the app( sharing lists, adding friends, etc.)
   3. Need to work on security and reauthentification after 10 minutes( also need to make sure user is logged in before making any requests)
+  4. I want to add google auth
+  5. Need to work on the UI
+
  */
 
 redisClient.on("connect", function (err) {
@@ -459,6 +462,8 @@ function query(sql, values) {
 // Delete task
 app.delete("/deletetask/:taskID", async (req, res) => {
   const taskID = req.params.taskID;
+  const listID = req.body.L_ID; // Assuming you send L_ID in the request body
+  console.log("listID", listID);
   console.log("deleting task", taskID);
   if (taskID === undefined) {
     return res.status(400).send("Task not found");
@@ -471,7 +476,8 @@ app.delete("/deletetask/:taskID", async (req, res) => {
         console.log(err);
         return res.status(500).send("Server Error");
       } else {
-        io.emit("TaskDelete");
+        // Include L_ID in the payload
+        io.emit("TaskDelete", { L_ID: listID });
         return res.status(200);
       }
     }
