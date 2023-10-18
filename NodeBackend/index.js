@@ -24,7 +24,6 @@ const { Server } = require("socket.io");
   3. Need to work on security and reauthentification after 10 minutes( also need to make sure user is logged in before making any requests)
   4. I want to add google auth
   5. Need to work on the UI
-
  */
 
 redisClient.on("connect", function (err) {
@@ -63,6 +62,7 @@ io.on("connection", (socket) => {
 
 //import Database connection
 const connection = require("./Components/DbConnect.js");
+const { appendFile } = require("fs");
 //Connect to Database
 connection.connect(function (err) {
   if (err) {
@@ -479,6 +479,64 @@ app.delete("/deletetask/:taskID", async (req, res) => {
         // Include L_ID in the payload
         io.emit("TaskDelete", { L_ID: listID });
         return res.status(200);
+      }
+    }
+  );
+});
+
+// add user to list
+app.put("/adduser/:listID", (req, res) => {
+  const email = req.body.email;
+  const listID = req.params.listID;
+  connection.query(
+    "SELECT * FROM users WHERE email = ?",
+    [email],
+    (err, results) => {
+      if (err) {
+        console.log(err);
+        return res.status(500).send("Server Error");
+      } else if (results.length === 0) {
+        console.log("User not found");
+        return res.status(404).send("User not found");
+      } else {
+        const userID = results[0].U_ID;
+        connection.query(
+          "INSERT INTO users_lists (U_ID, L_ID) VALUES (?, ?)",
+          [userID, listID],
+          (err, results) => {
+            if (err) {
+              console.log(err);
+              return res.status(500).send("Server Error");
+            } else {
+              return res.status(200).send("User added successfully");
+            }
+          }
+        );
+      }
+    }
+  );
+});
+
+// Get list users
+app.get("/getlistusers/:listID", (req, res) => {
+  const listID = req.params.listID;
+  connection.query(
+    "SELECT users_lists.U_ID, users.username FROM users_lists INNER JOIN users ON users_lists.U_ID = users.U_ID WHERE users_lists.L_ID = ?",
+    [listID],
+    (err, results) => {
+      if (err) {
+        console.log(err);
+        return res.status(500).send("Server Error");
+      } else if (results.length > 0) {
+        const listData = results.map((row) => ({
+          U_ID: row.U_ID,
+          username: row.username,
+        })); // Extract L_ID and Title
+        console.log(listData); // Log listData
+        return res.status(200).json(listData); // Send listData as JSON
+      } else {
+        console.log("List not found");
+        return res.status(404).send("List not found");
       }
     }
   );

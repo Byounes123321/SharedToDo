@@ -11,6 +11,7 @@ export default function ListView({ userID, incomingListID }) {
   const [completed, setCompleted] = useState(false);
   const [taskNameTemp, setTaskNameTemp] = useState({});
   const [taskDeleted, setTaskDeleted] = useState(false);
+  const [listUsers, setListUsers] = useState([]);
 
   // Use a ref to store the debounce timeout IDs for deleteTask and taskCompleted
   const debounceDeleteTaskTimeout = useRef(null);
@@ -274,6 +275,27 @@ export default function ListView({ userID, incomingListID }) {
       console.log("Task deleted:", data);
     }
   };
+  const addUser = () => {
+    // need to add sockets to update other users lists once one person changes something
+    const email = prompt("Please enter the email of the user you want to add");
+    console.log(email);
+    fetch("http://localhost:8888/adduser/" + listID, {
+      method: "PUT",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({ email }),
+    });
+  };
+
+  useEffect(() => {
+    fetch("http://localhost:8888/getlistusers/" + listID)
+      .then((response) => response.json())
+      .then((data) => {
+        console.log("Users:", data);
+        setListUsers(data);
+      });
+  }, [listID]);
 
   return (
     <div>
@@ -286,6 +308,7 @@ export default function ListView({ userID, incomingListID }) {
           onChange={(e) => setListName(e.target.value)}
         />
         <button onClick={deleteList}>Delete List</button>
+        <button onClick={addUser}>Add User to list</button>
       </h1>
       <div>
         <input
@@ -327,6 +350,12 @@ export default function ListView({ userID, incomingListID }) {
               Delete
             </button>
           </li>
+        ))}
+      </ul>
+      <p>Users in list: </p>
+      <ul>
+        {listUsers.map((user) => (
+          <li key={user.U_ID}>{user.username}</li>
         ))}
       </ul>
     </div>
