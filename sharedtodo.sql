@@ -3,9 +3,9 @@
 -- https://www.phpmyadmin.net/
 --
 -- Host: localhost:3306
--- Generation Time: Oct 01, 2023 at 04:52 AM
+-- Generation Time: Oct 18, 2023 at 08:43 PM
 -- Server version: 5.7.24
--- PHP Version: 8.1.0
+-- PHP Version: 8.0.1
 
 SET SQL_MODE = "NO_AUTO_VALUE_ON_ZERO";
 START TRANSACTION;
@@ -41,7 +41,9 @@ INSERT INTO `lists` (`L_ID`, `Title`) VALUES
 (50, 'list'),
 (51, 'newlsit'),
 (52, 'hello'),
-(53, 'ahhh');
+(53, 'okay?'),
+(55, 'SharedToDo'),
+(56, 'Test list');
 
 -- --------------------------------------------------------
 
@@ -61,11 +63,23 @@ CREATE TABLE `tasks` (
 --
 
 INSERT INTO `tasks` (`T_ID`, `taskName`, `Done`, `L_ID`) VALUES
-(78, 'adfa', 0, 49),
-(107, 'adf', 0, 49),
-(108, 'adf', 0, 49),
-(109, 'adf', 0, 49),
-(110, 'adf', 0, 49);
+(171, 'Add google auth', 0, 55),
+(172, 'make look nice', 0, 55),
+(173, 'add extra security', 0, 55),
+(174, 'add social features', 0, 55),
+(180, 'afa', 1, 56),
+(181, 'adf', 0, 56),
+(182, 'daf', 0, 56),
+(183, 'adsf', 0, 56),
+(184, 'adf', 0, 56),
+(185, 'adf', 0, 56),
+(186, 'adf', 0, 56),
+(187, 'adf', 1, 56),
+(188, 'afda', 0, 49),
+(189, 'fadfdas', 1, 49),
+(190, 'dasf', 1, 49),
+(191, 'ads', 0, 49),
+(192, 'asdf', 0, 49);
 
 -- --------------------------------------------------------
 
@@ -85,7 +99,8 @@ CREATE TABLE `users` (
 --
 
 INSERT INTO `users` (`U_ID`, `UserName`, `email`, `Password`) VALUES
-(1, 'Bassil11', 'bassilyounes@gmail.com', '$2b$10$JrgCdcSk3nIMG.q4rq9b9OVTfpkl8ktA/WzPpqJd4.ng8tUPoxyEW');
+(1, 'Bassil11', 'bassilyounes@gmail.com', '$2b$10$JrgCdcSk3nIMG.q4rq9b9OVTfpkl8ktA/WzPpqJd4.ng8tUPoxyEW'),
+(2, 'ppguy', 'gay@gmail.com', '$2b$10$KRJUF8N6YnXSWKMyzy8oGurOJJ9aP6EOSeAMX1tSilPTcpeUHXd5m');
 
 -- --------------------------------------------------------
 
@@ -108,7 +123,10 @@ INSERT INTO `users_lists` (`ID`, `U_ID`, `L_ID`) VALUES
 (50, 1, 50),
 (51, 1, 51),
 (52, 1, 52),
-(53, 1, 53);
+(53, 1, 53),
+(55, 1, 55),
+(56, 2, 56),
+(57, 1, 56);
 
 --
 -- Indexes for dumped tables
@@ -146,25 +164,25 @@ ALTER TABLE `users_lists`
 -- AUTO_INCREMENT for table `lists`
 --
 ALTER TABLE `lists`
-  MODIFY `L_ID` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=54;
+  MODIFY `L_ID` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=57;
 
 --
 -- AUTO_INCREMENT for table `tasks`
 --
 ALTER TABLE `tasks`
-  MODIFY `T_ID` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=114;
+  MODIFY `T_ID` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=193;
 
 --
 -- AUTO_INCREMENT for table `users`
 --
 ALTER TABLE `users`
-  MODIFY `U_ID` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=2;
+  MODIFY `U_ID` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=3;
 
 --
 -- AUTO_INCREMENT for table `users_lists`
 --
 ALTER TABLE `users_lists`
-  MODIFY `ID` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=54;
+  MODIFY `ID` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=58;
 COMMIT;
 
 /*!40101 SET CHARACTER_SET_CLIENT=@OLD_CHARACTER_SET_CLIENT */;
